@@ -1,0 +1,183 @@
+<admintpl file="header" />
+</head>
+<body>
+	<div class="wrap js-check-wrap">
+		<ul class="nav nav-tabs">
+			<li class="active"><a href="{:U('momo_regist_list')}">陌陌生产仓库</a></li>
+		</ul>
+		<form class="well form-search" method="post" action="{:U('momo_regist_list')}">
+			销售状态：
+			<select id="sell_staus" name="sell_staus" style="width: 70px;">
+				<option value="0 "<if condition="$sell_staus eq 0">selected="selected"</if>>全部</option>
+				<option value="1" <if condition="$sell_staus eq 1">selected="selected"</if>>未售</option>
+				<option value="2" <if condition="$sell_staus eq 2">selected="selected"</if>>已售</option>
+				<option value="3" <if condition="$sell_staus eq 3">selected="selected"</if>>已封</option>
+				<option value="4" <if condition="$sell_staus eq 4">selected="selected"</if>>退换</option>
+			</select>
+			账号状态：
+			<select id="account_status" name="account_status" style="width: 70px;">
+				<option value="0"<if condition="$account_status eq 0">selected="selected"</if>>全部</option>
+				<option value="1"<if condition="$account_status eq 1">selected="selected"</if>>正常</option>
+				<option value="2"<if condition="$account_status eq 2">selected="selected"</if>>已封</option>
+			</select>
+			账号:
+			<input type="text" name="register_username" style="width: 80px;font-size:9px;" value="{$register_username}" placeholder="账号">&nbsp;
+			设备名:
+			<input type="text" name="dev_name" style="width: 50px;font-size:9px;" value="{$dev_name}" placeholder="设备名">&nbsp;
+			注册时间：
+			<input type="text" name="start_time" class="js-datetime" value="{$start_time|default=''}" style="width: 110px;" placeholder="起始时间" autocomplete="off">-
+			<input type="text" class="js-datetime" name="end_time" value="{$end_time|default=''}" style="width: 110px;" placeholder="结束时间" autocomplete="off"> &nbsp;
+			<input type="submit" class="btn btn-primary" value="搜索">
+			<!--<a class="btn btn-danger" href="javascript:void(0)" onclick="clearall()">清空</a>-->
+			<if condition="sp_auth_check(get_current_admin_id(),'Admin/report/momo_regist_toexcel')">
+			  <a class="btn btn-danger" href="javascript:void(0)" onclick="toexcel()">导出excel</a>
+			</if>
+		</form>
+		<table class="table table-hover table-bordered">
+			<thead>
+				<tr>
+					<th width="16"><label><input type="checkbox" class="js-check-all" data-direction="x" data-checklist="js-check-x"></label></th>
+					<th width="50">序号</th>
+					<th>账号</th>
+					<th>密码</th>
+					<th>手机号</th>
+					<th>设备名</th>
+					<th>注册时间</th>
+					<th>销售状态</th>
+					<th>账号状态</th>
+					<th width="120">操作</th>
+				</tr>
+			</thead>
+			<tbody>
+
+				<foreach name="list" item="vo">
+				<tr>
+					<td><input type="checkbox" class="js-check" data-yid="js-check-y" data-xid="js-check-x" name="ids[]" value="{$vo.id}"></td>
+					<td>{$vo.id}</td>
+					<td>{$vo.register_username}</td>
+					<td>{$vo.register_password}</td>
+					<td>{$vo.register_mobile}</td>
+					<td>{$vo.dev_name}</td>
+					<td>{:date("Y-m-d H:i",$vo['createtime'])}</td>
+					<td>
+						<switch name="vo.sell_staus" >
+							<case value="1">未售</case>
+							<case value="2">已售</case>
+							<case value="3">已封</case>
+							<case value="4">退换</case>
+						</switch>
+					</td>
+					<td>
+						<switch name="vo.account_status" >
+							<case value="1">正常</case>
+							<case value="2">封号</case>
+						</switch>
+					</td>
+					<td>
+						<a href="javascript:void(0)" onclick="change_sell_status('{$vo.id}',1)">未售</a>|
+						<a href="javascript:void(0)" onclick="change_sell_status('{$vo.id}',2)">已售</a>|
+						<a href="javascript:void(0)" onclick="change_sell_status('{$vo.id}',3)">已封</a>|
+						<a href="javascript:void(0)" onclick="change_sell_status('{$vo.id}',4)">退换</a>|
+					</td>
+				</tr>
+				</foreach>
+			</tbody>
+		</table>
+		<div class="pagination">{$page}</div>
+	</div>
+	<script src="__PUBLIC__/js/common.js"></script>
+	<script src="__PUBLIC__/js/layer/layer.js"></script>
+    <script>
+		function toexcel(){
+			//勾选导出
+			var ids=[];
+			$("input[name^='ids']:checked").each(function(i){
+				ids[i]=$(this).val();
+			});
+			var in_str='';
+			for(var i=0;i<ids.length;i++){
+				if(i!=(ids.length-1)){
+					in_str += ids[i]+',';
+				}else{
+					in_str += ids[i];
+				}
+			}
+
+			var url = 'momo_regist_toexcel';
+				start_time = $("input[name=start_time]").val();
+				end_time  = $("input[name=end_time]").val();
+				register_username = $("input[name=register_username]").val();
+			    dev_name = $("input[name=dev_name]").val();
+				sell_staus = $('#sell_staus option:selected') .val();
+				account_status = $('#account_status option:selected') .val();
+
+
+				if(start_time){
+					url += '/start_time/'+start_time;
+				}
+				if(end_time){
+					url += '/end_time/'+end_time;
+				}
+				if(register_username){
+					url += '/register_username/'+register_username;
+				}
+				if(sell_staus){
+					url += '/sell_staus/'+sell_staus;
+				}
+				if(account_status){
+					url += '/account_status/'+account_status;
+				}
+		     	if(dev_name){
+					url += '/dev_name/'+dev_name;
+				}
+			    if(in_str){
+				   url += '/ids/'+in_str;
+			    }
+
+			window.location.href="{:U('"+url+"')}";
+		}
+
+
+		//下载文件
+		function todownload(){
+			var ids=[];
+			var html = "<span>请将以下链接复制到迅雷下载</span><button class='btn btn-danger' id='btn_copy'>一键复制</button><br/><ol>";
+			var http_head = "http://10.10.10.10";
+			$("input[name^='ids']:checked").each(function(i){
+				ids[i]=$(this).val();
+				var download_url=$(this).parent().parent().children("td").eq(1).text();
+				html += "<li>"+http_head+download_url+"</li>";
+			});
+			html+="</ol>"
+			if(ids.length<1){
+				layer.alert("请先勾选下载");
+			}else{
+				layer.open({
+					type: 1,
+					skin: 'layui-layer-rim', //加上边框
+					area: ['420px', '240px'], //宽高
+					content: html
+				});
+			}
+		}
+
+		function change_sell_status(id,status){
+			$.ajax({
+				data:{id:id,status:status},
+				type: "post",
+				dataType:"json",
+				url:"{:U('momo_regist_edit')}",
+				success:function(data){
+					if(data.code==-1){
+						alert(data.message);
+					}else{
+						alert(data.message);
+						location.reload();
+					}
+				}
+			});
+		}
+
+	</script>
+</body>
+</html>

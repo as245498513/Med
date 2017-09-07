@@ -1,0 +1,151 @@
+<?php
+// +----------------------------------------------------------------------
+// | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
+// +----------------------------------------------------------------------
+// | Copyright (c) 2013-2014 http://www.thinkcmf.com All rights reserved.
+// +----------------------------------------------------------------------
+// | Author: Tuolaji <479923197@qq.com>
+// +----------------------------------------------------------------------
+/**
+ */
+namespace Admin\Controller;
+use Common\Controller\AdminbaseController;
+use Org\Net\Http;
+class ReportController extends AdminbaseController {
+
+    /**
+     * 陌陌注册账号信息列表页面
+     */
+    public function momo_regist_list(){
+        $regist_log_model = M("XxtScriptRegisterLog");
+        $register_username  = trim(I('register_username'));//去除空格
+        $sell_staus  = I('sell_staus',1);//默认未售
+        $account_status  = I('account_status',1);//默认正常
+        $start_time = I('start_time');
+        $end_time   = I('end_time');
+
+        //条件查询
+        if($register_username){
+            $where['register_username'] =  array('like','%'.$register_username.'%');
+        }
+        if($sell_staus!=0){
+            $where['sell_staus'] = $sell_staus;
+        }
+        if($account_status!=0){
+            $where['account_status'] = $account_status;
+        }
+
+        //时间筛选
+        if($start_time){
+            $start_time_st =  strtotime($start_time);
+            $where['createtime'] = array('egt',$start_time_st);
+        }
+        if($end_time){
+            $end_time_st =  strtotime($end_time)+60;
+            $where['createtime'] = array('elt',$end_time_st);
+        }
+        if($start_time&&$end_time){
+            $start_time_st =  strtotime($start_time);
+            $end_time_st =  strtotime($end_time)+60;
+            $where['createtime'] = array('between',array($start_time_st,$end_time_st));
+        }
+        $count = $regist_log_model->where($where)->count();
+        $page = $this->page($count, 15);
+
+        $list = $regist_log_model->where($where)->order('createtime desc') ->limit($page->firstRow, $page->listRows)->select();
+
+        $this->assign("list",$list);
+        $this->assign("register_username",$register_username);
+        $this->assign("sell_staus",$sell_staus);
+        $this->assign("account_status",$account_status);
+        $this->assign("start_time",$start_time);
+        $this->assign("end_time",$end_time?$end_time:date('Y-m-d H:i',NOW_TIME));
+        $this->assign("page", $page->show('Admin'));
+        $this->display();
+    }
+
+    /**
+     * 更改销售状态
+     */
+    public function momo_regist_edit(){
+         $id = I('id');
+         $status = I('status');
+
+        $save = array(
+            'sell_staus'=>$status
+        );
+        $rs =  M('XxtScriptRegisterLog')->where(array('id'=>$id))->save($save);
+        if($rs>0){
+            $return  = array('code'=>0,'message'=>'状态更改成功');
+        }else{
+            $return  = array('code'=>-1,'message'=>'状态无需更改');
+        }
+        $this->ajaxReturn($return);
+    }
+
+    /**
+     * 导出excel
+     */
+    public function momo_regist_toexcel(){
+        $regist_log_model = M("XxtScriptRegisterLog");
+        //筛选条件
+        $register_username  = trim(I('register_username'));//去除空格
+        $sell_staus  = I('sell_staus',1);//默认未售
+        $account_status  = I('account_status',1);//默认正常
+        $start_time = I('start_time');
+        $end_time   = I('end_time');
+        $ids = I('ids');
+
+        if($ids){
+            $ids_arr = explode(",",$ids);
+            if(!$ids_arr){
+                $where['id'] = $ids;
+            }else{
+                $where['id'] = array('in',$ids);
+            }
+        }else{
+            //条件查询
+            if($register_username){
+                $where['register_username'] =  array('like','%'.$register_username.'%');
+            }
+            if($sell_staus!=0){
+                $where['sell_staus'] = $sell_staus;
+            }
+            if($account_status!=0){
+                $where['account_status'] = $account_status;
+            }
+
+            //时间筛选
+            if($start_time){
+                $start_time_st =  strtotime($start_time);
+                $where['createtime'] = array('egt',$start_time_st);
+            }
+            if($end_time){
+                $end_time_st =  strtotime($end_time)+60;
+                $where['createtime'] = array('elt',$end_time_st);
+            }
+            if($start_time&&$end_time){
+                $start_time_st =  strtotime($start_time);
+                $end_time_st =  strtotime($end_time)+60;
+                $where['createtime'] = array('between',array($start_time_st,$end_time_st));
+            }
+        }
+
+        $list = $regist_log_model->where($where)->order('createtime desc') ->select();
+        //整理导出数据
+        $result = array();
+        foreach($list as $key=>$value){
+            $result[$key]['register_username'] = $value['register_username']."";
+            $result[$key]['register_password'] = $value['register_password']."";
+            $result[$key]['register_mobile']   =  $value['register_mobile']."";
+        }
+        //导出excel
+        $title_arr=array('账号','密码','手机号码');
+        if(empty($result)){
+            $this->error("导出文件为空，请注意筛选条件");
+        }else{
+            export_Excel("陌陌账号",$result,$title_arr,$start_time_st?date('Y-m-d',$start_time_st):'',$end_time_st?date('Y-m-d',$end_time_st):'');
+        }
+    }
+
+}

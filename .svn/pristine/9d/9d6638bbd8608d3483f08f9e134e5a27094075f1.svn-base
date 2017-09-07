@@ -1,0 +1,95 @@
+<admintpl file="header" />
+</head>
+<body>
+	<div class="wrap js-check-wrap">
+		<ul class="nav nav-tabs">
+			<li class="active"><a href="{:U('code_list')}">授权码列表</a></li>
+			<li><a href="{:U('code_add')}">添加授权码</a></li>
+		</ul>
+		<form class="well form-search" method="post" action="{:U('code_list')}">
+			类型：
+			<select id="type" name="type" style="width: 80px;">
+				<option value="-1"<if condition="$type eq -1">selected="selected"</if>>全部</option>
+				<option value="0" <if condition="$type eq 0">selected="selected"</if>>陌陌</option>
+				<option value="1" <if condition="$type eq 1">selected="selected"</if>>微信</option>
+			</select>
+			授权码:
+			<input type="text" name="auth_code" style="width: 225px;font-size:9px;" value="{$auth_code}" placeholder="请输入授权码">&nbsp; &nbsp;
+			创建时间：
+			<input type="text" name="start_time" class="js-datetime" value="{$start_time|default=''}" style="width: 130px;" autocomplete="off">-
+			<input type="text" class="js-datetime" name="end_time" value="{$end_time|default=''}" style="width: 130px;" autocomplete="off"> &nbsp; &nbsp;
+			<input type="submit" class="btn btn-primary" value="搜索">
+			<a class="btn btn-danger" href="javascript:void(0)" onclick="clearall()">清空</a>
+			<a class="btn btn-danger" href="javascript:void(0)" onclick="toexcel()">导出excel</a>
+		</form>
+		<table class="table table-hover table-bordered">
+			<thead>
+				<tr>
+					<th width="50">序号</th>
+					<th>授权码</th>
+					<th>创建时间</th>
+					<th>有效期限（天）</th>
+					<!--<th>手机序列号</th>-->
+					<!--<th>手机UDID</th>-->
+					<th>使用时间</th>
+					<th>类型</th>
+					<!--<th width="120">操作</th>-->
+				</tr>
+			</thead>
+			<tbody>
+
+				<foreach name="list" item="vo">
+				<tr>
+					<td>{$vo.id}</td>
+					<td>{$vo.auth_code}</td>
+					<td>{:date("Y-m-d H:i",$vo['createtime'])}</td>
+					<td>{$vo.valid_time}</td>
+					<!--<td>{$vo.serial_number}</td>-->
+					<!--<td>{$vo.unique_id}</td>-->
+					<td><if condition="$vo.starttime eq 0">未使用<else />{:date("Y-m-d H:i",$vo['starttime'])}</if></td>
+					<td>
+						<switch name="vo.type" >
+						 <case value="0">陌陌</case>
+						 <case value="1">微信</case>
+					     </switch>
+					</td>
+					<!--<td>
+					</td>-->
+				</tr>
+				</foreach>
+			</tbody>
+		</table>
+		<div class="pagination">{$page}</div>
+	</div>
+	<script src="__PUBLIC__/js/common.js"></script>
+    <script>
+		function toexcel(){
+			start_time = $("input[name=start_time]").val();
+			end_time  = $("input[name=end_time]").val();
+			auth_code = $("input[name=auth_code]").val();
+			type = $('#type option:selected') .val();
+
+			var url = 'code_toexcel';
+			if(start_time){
+				url += '/start_time/'+start_time;
+			}
+			if(end_time){
+				url += '/end_time/'+end_time;
+			}
+			if(auth_code){
+				url += '/auth_code/'+auth_code;
+			}
+			alert(type);
+			if(type){
+				url += '/type/'+type;
+			}
+			window.location.href="{:U('"+url+"')}";
+		}
+		function clearall(){
+			start_time = $("input[name=start_time]").val('');
+			end_time  = $("input[name=end_time]").val('');
+			auth_code = $("input[name=auth_code]").val('');
+		}
+	</script>
+</body>
+</html>

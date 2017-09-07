@@ -1,0 +1,93 @@
+<admintpl file="header" />
+</head>
+<body>
+	<div class="wrap js-check-wrap">
+		<form class="well form-search" method="post" action="{:U('order_goods_list')}">
+				账号:
+				<input type="text" name="register_username" style="width: 120px;" value="{$register_username}" placeholder="账号">&nbsp;
+			<input type="submit" class="btn btn-primary" value="搜索">
+			<a class="btn btn-danger" href="javascript:void(0)" onclick="toexcel()">导出excel</a>
+			<if condition="$submit_display eq 1">
+				<a class="btn btn-success " href="javascript:void(0)" onclick="submit_choose_account()">确定选择</a>
+			</if>
+			<a class="btn btn-danger" href="javascript:void(0)" onclick="tocopy()">点击复制</a>
+			<input type="text" id="order_sn" name="order_sn" value="{$order_sn}" style="display: none"/>
+		</form>
+		<table class="table table-hover table-bordered">
+
+			<thead>
+				<tr>
+					<th width="16"><label><input type="checkbox" class="js-check-all" data-direction="x" data-checklist="js-check-x"></label></th>
+					<th>账号</th>
+					<th>密码</th>
+					<th>注册时间</th>
+					<th>最后检测时间</th>
+				</tr>
+			</thead>
+			<tbody>
+			    <empty name="list">
+					<tr><td>暂无检测信息</td></tr>
+					<else/>
+					<foreach name="list" item="vo">
+						<tr>
+							<td><input type="checkbox" class="js-check" data-yid="js-check-y" data-xid="js-check-x" name="usernames[]" value="{$vo.register_username}"></td>
+							<td>{$vo.register_username}</td>
+							<td>{$vo.register_password}</td>
+							<td>{:date('Y-m-d H:i:s',$vo['register_time'])}</td>
+							<td>{:date('Y-m-d H:i:s',$vo['last_check_time'])}</td>
+						</tr>
+					</foreach>
+				</empty>
+			</tbody>
+		</table>
+         <!--隐藏-->
+		<div style="display: none"><div id="copyarea"><textarea style="width:190px;height:235px" >{$all_str}</textarea></div></div>
+		<div class="pagination">{$page}</div>
+	</div>
+	<script src="__PUBLIC__/js/common.js"></script>
+	<script src="__PUBLIC__/js/layer/layer.js"></script>
+    <script>
+		function toexcel(){
+			//勾选导出
+			var url = 'order_goods_toexcel';
+			var order_sn = $("#order_sn").val();
+			window.location.href="{:U('"+url+"')}"+"/order_sn/"+order_sn;
+		}
+		function tocopy(){
+			var copyarea = $("#copyarea").html();
+			//页面层
+			layer.open({
+				title:'请手动全选并复制',
+				type: 1,
+				skin: 'layui-layer-rim', //加上边框
+				area: ['210px', '240px'], //宽高
+				content:copyarea
+			});
+		}
+
+		function submit_choose_account(){
+			var usernames=[];
+			var repeat_usernames='';
+			//批量选择
+			$("input[name^='usernames']:checked").each(function(i){
+				usernames[i]=$(this).val();
+				var username=$(this).parent().parent().children("td").eq(1).text();
+				var new_li = "<li>"+username+"</li>"+"<input id='"+username+"' name='abnormal_accounts[]' value='"+username+"' style='display: none'/>";
+				//判断是否重复添加
+				if(parent.$('#'+username).length>0){
+					repeat_usernames+=username+',';
+				}else{
+					parent.$('#show_abnormal_account').append(new_li);
+				}
+			});
+			if(repeat_usernames){
+               alert("账号："+repeat_usernames+"已添加,请勿重复添加!");
+			}
+			parent.$('#abnormal_accounts').val(usernames);
+			var index = parent.layer.getFrameIndex(window.name); //获取当前窗体索引
+			parent.layer.close(index);
+		}
+	</script>
+
+</body>
+</html>

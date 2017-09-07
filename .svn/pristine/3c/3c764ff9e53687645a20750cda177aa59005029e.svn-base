@@ -1,0 +1,87 @@
+<admintpl file="header"/>
+</head>
+<body>
+	<div class="wrap js-check-wrap">
+		<ul class="nav nav-tabs">
+			<li><a href="{:U('friend_list')}">加好友素材</a></li>
+			<li class="active">
+				<a href="{:U('friend_add')}">
+					<if condition="$info.id neq ''">
+						编辑
+						<else/>
+						新增
+					</if>
+				</a>
+			</li>
+		</ul>
+		<form class="form-horizontal js-ajax-form" action="{:U('Source/friend_add_post')}" method="post">
+			<fieldset>
+				<div class="control-group">
+					<label class="control-label">标题</label>
+					<div class="controls">
+						<input type="text" name="title" value="{$info.title}" id="title"/>
+						<span class="form-required">*</span>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label">添加方式</label>
+					<div class="controls">
+						<empty name="info">
+							<input type="radio" name="add_type" value="1" checked="checked"/>生成号码&nbsp;&nbsp;
+							<input type="radio" name="add_type" value="2"/>文件上传
+							<else/>
+							<input type="radio" name="add_type" value="1" <if condition="$info['add_type'] eq 1">checked="checked"</if>/>生成号码&nbsp;&nbsp;
+							<input type="radio" name="add_type" value="2" <if condition="$info['add_type'] eq 2">checked="checked"</if>/>文件上传
+						</empty>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label">地区</label>
+					<div class="controls" data-toggle="distpicker"  id="distpicker">
+						<select class="form-control" id="province" name="province"></select>
+						<select class="form-control" id="city" name="city"></select>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label">数量</label>
+					<div class="controls">
+						<input type="text" name="quantity" value="{$info.quantity}" id="quantity"/>
+						<span class="form-required">*</span>
+					</div>
+				</div>
+
+				<!--隐藏-->
+				<input type="text" name="edit_id" value="{$info.id}"  style="display: none"/>
+			</fieldset>
+			<div class="form-actions">
+				<button type="submit" class="btn btn-primary js-ajax-submit">保存</button>
+				<a class="btn" href="javascript:history.back(-1);">关闭</a>
+			</div>
+		</form>
+	</div>
+	<script src="__PUBLIC__/js/common.js"></script>
+	<script src="__PUBLIC__/js/uploadify/jquery.uploadify.min.js" type="text/javascript"></script>
+
+	<script src="__PUBLIC__/js/jQueryDistpicker/js/distpicker.data.js"></script>
+	<script src="__PUBLIC__/js/jQueryDistpicker/js/distpicker.js"></script>
+	<script src="__PUBLIC__/js/jQueryDistpicker/js/main.js"></script>
+    <script type="text/javascript">
+		$(function(){
+			var edit_province = '{$info.province}';
+			var edit_city = '{$info.city}';
+            if(edit_province){
+				$("#distpicker").distpicker('destroy');
+				$("#distpicker").distpicker({
+					province: edit_province,
+					city: edit_city,
+					autoSelect: true,
+					placeholder: false
+				});
+			}
+		});
+	</script>
+</body>
+</html>

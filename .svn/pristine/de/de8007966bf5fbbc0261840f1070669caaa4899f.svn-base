@@ -1,0 +1,105 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : localhost
+Source Server Version : 50553
+Source Host           : localhost:3306
+Source Database       : xxt.getolink.cc
+
+Target Server Type    : MYSQL
+Target Server Version : 50553
+File Encoding         : 65001
+
+Date: 2016-12-29 14:07:45
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for cmf_xxt_api_post_log
+-- ----------------------------
+DROP TABLE IF EXISTS `cmf_xxt_api_post_log`;
+CREATE TABLE `cmf_xxt_api_post_log` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '自增id(设备编号)',
+  `post_url` varchar(40) NOT NULL COMMENT 'post连接',
+  `post_ip` varchar(40) DEFAULT NULL COMMENT 'post ip',
+  `post_param` text COMMENT '参数',
+  `createtime` int(11) NOT NULL COMMENT '生成时间',
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=8 DEFAULT CHARSET=utf8 COMMENT='api—post行为日志';
+
+-- ----------------------------
+-- Table structure for cmf_xxt_code
+-- ----------------------------
+DROP TABLE IF EXISTS `cmf_xxt_code`;
+CREATE TABLE `cmf_xxt_code` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `auth_code` varchar(32) NOT NULL COMMENT '授权码',
+  `createtime` int(11) NOT NULL DEFAULT '0' COMMENT '创建使用',
+  `starttime` int(11) DEFAULT '0' COMMENT '使用时间',
+  `valid_time` int(11) NOT NULL DEFAULT '0' COMMENT '有效期，单位天',
+  `serial_number` varchar(12) DEFAULT '' COMMENT '手机序列号',
+  `unique_id` varchar(40) DEFAULT '' COMMENT '唯一标识',
+  `type` varchar(20) DEFAULT NULL COMMENT '授权码类型("momo","wechat")',
+  PRIMARY KEY (`id`,`auth_code`),
+  UNIQUE KEY `auth_code` (`auth_code`) USING BTREE,
+  KEY `settime` (`starttime`)
+) ENGINE=MyISAM AUTO_INCREMENT=30238 DEFAULT CHARSET=utf8 COMMENT='陌陌注册脚本授权码';
+
+-- ----------------------------
+-- Table structure for cmf_xxt_device_auth
+-- ----------------------------
+DROP TABLE IF EXISTS `cmf_xxt_device_auth`;
+CREATE TABLE `cmf_xxt_device_auth` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `unique_id` varchar(40) NOT NULL DEFAULT '' COMMENT '唯一标识',
+  `serial_number` varchar(12) NOT NULL COMMENT '序列号',
+  `overtime` int(11) NOT NULL DEFAULT '0' COMMENT '结束时间',
+  `auth_code` varchar(32) DEFAULT NULL COMMENT '授权码',
+  `dev_name` varchar(40) DEFAULT NULL COMMENT '设备名称',
+  `auth_ip` varchar(20) DEFAULT NULL COMMENT '授权ip',
+  `type` varchar(20) DEFAULT NULL COMMENT '授权码类型',
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=14 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Table structure for cmf_xxt_script_error_log
+-- ----------------------------
+DROP TABLE IF EXISTS `cmf_xxt_script_error_log`;
+CREATE TABLE `cmf_xxt_script_error_log` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '自增id',
+  `dev_name` varchar(30) NOT NULL COMMENT '设备名称(用户自定义)',
+  `unique_id` varchar(64) NOT NULL COMMENT '设备唯一标识',
+  `ip` varchar(20) NOT NULL COMMENT 'ip地址',
+  `content` text COMMENT '错误信息数组记录',
+  `createtime` int(11) NOT NULL COMMENT '授权记录日志时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8 COMMENT='脚本错误日志';
+
+-- ----------------------------
+-- Table structure for cmf_xxt_script_register_log
+-- ----------------------------
+DROP TABLE IF EXISTS `cmf_xxt_script_register_log`;
+CREATE TABLE `cmf_xxt_script_register_log` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '自增id',
+  `dev_name` varchar(30) NOT NULL COMMENT '设备名称(用户自定义)',
+  `unique_id` varchar(64) NOT NULL COMMENT '设备唯一标识',
+  `dev_ip` varchar(20) NOT NULL COMMENT 'ip地址',
+  `retister_type` varchar(20) NOT NULL DEFAULT '0' COMMENT '注册类型("momo","wechat")',
+  `retister_info` text COMMENT '账号注册信息',
+  `createtime` int(11) NOT NULL COMMENT '注册时间',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8 COMMENT='账号注册信息日志';
+
+-- ----------------------------
+-- Table structure for cmf_xxt_script_version
+-- ----------------------------
+DROP TABLE IF EXISTS `cmf_xxt_script_version`;
+CREATE TABLE `cmf_xxt_script_version` (
+  `id` int(11) NOT NULL AUTO_INCREMENT COMMENT '自增id',
+  `script_name` varchar(30) NOT NULL COMMENT '脚本名称',
+  `script_version` varchar(15) NOT NULL COMMENT '版本号(v1.0)',
+  `remark` text COMMENT '脚本说明',
+  `createtime` int(11) NOT NULL COMMENT '创建时间',
+  PRIMARY KEY (`id`)
+) ENGINE=MyISAM AUTO_INCREMENT=14 DEFAULT CHARSET=utf8 COMMENT='脚本版本表';

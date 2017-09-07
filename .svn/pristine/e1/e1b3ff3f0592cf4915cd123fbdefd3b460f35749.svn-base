@@ -1,0 +1,79 @@
+<admintpl file="header" />
+</head>
+<body>
+	<div class="wrap js-check-wrap">
+		<ul class="nav nav-tabs">
+			<li class="active"><a href="{:U('script_list')}">脚本列表</a></li>
+			<li><a href="{:U('script_upload')}">脚本上传</a></li>
+		</ul>
+		<form class="well form-search" method="post" action="{:U('script_list')}">
+			脚本名称:
+			<input class="input" type="text" name="script_name" style="width: 100px;font-size:9px;" value="{$script_name}" placeholder="脚本名称">&nbsp;
+			版本号:
+			<input class="input" type="text" name="script_version" style="width: 80px;font-size:9px;" value="{$script_version}" placeholder="版本号">&nbsp;
+			上传时间：
+			<input type="text" name="start_time" class="js-datetime input" value="{$start_time|default=''}" style="width: 130px;" placeholder="起始时间" autocomplete="off">-
+			<input type="text" class="js-datetime input" name="end_time" value="{$end_time|default=''}" style="width: 130px;" placeholder="结束时间" autocomplete="off"> &nbsp; &nbsp;
+			<input type="submit" class="btn btn-primary" value="搜索">
+			<a class="btn btn-danger" href="javascript:void(0)" onclick="clearall()">清空</a>
+			<!--<a class="btn btn-danger" href="javascript:void(0)" onclick="toexcel()">导出excel</a>-->
+		</form>
+		<table class="table table-hover table-bordered">
+			<thead>
+				<tr>
+					<th width="50">序号</th>
+					<th>脚本名称</th>
+					<th>版本号</th>
+					<th>脚本说明</th>
+					<th>上传时间</th>
+					<!--<th width="120">操作</th>-->
+				</tr>
+			</thead>
+			<tbody>
+
+				<foreach name="list" item="vo">
+				<tr>
+					<td>{$vo.id}</td>
+					<td>{$vo.script_name}</td>
+					<td>{$vo.script_version}</td>
+					<td>{$vo.remark}</td>
+					<td>{:date("Y-m-d H:i",$vo['createtime'])}</td>
+					<!--<td>
+						<button class="btn btn-danger btn-small js-ajax-submit" type="submit" data-action="/index.php/AdminPost/delete" data-subcheck="true" data-msg="您确定删除吗？">删除</button>
+					</td>-->
+				</tr>
+				</foreach>
+			</tbody>
+		</table>
+		<div class="pagination">{$page}</div>
+	</div>
+	<script src="__PUBLIC__/js/common.js"></script>
+    <script>
+		function toexcel(){
+			start_time = $("input[name=start_time]").val();
+			end_time  = $("input[name=end_time]").val();
+			auth_code = $("input[name=auth_code]").val();
+			type = $('#type option:selected') .val();
+
+			var url = 'code_toexcel';
+			if(start_time){
+				url += '/start_time/'+start_time;
+			}
+			if(end_time){
+				url += '/end_time/'+end_time;
+			}
+			if(auth_code){
+				url += '/auth_code/'+auth_code;
+			}
+			alert(type);
+			if(type){
+				url += '/type/'+type;
+			}
+			window.location.href="{:U('"+url+"')}";
+		}
+		function clearall(){
+			$(".input").val('');
+		}
+	</script>
+</body>
+</html>

@@ -1,0 +1,54 @@
+<admintpl file="header" />
+</head>
+<body>
+	<div class="wrap">
+		<ul class="nav nav-tabs">
+			<li ><a href="{:U('index')}">设备管理</a></li>
+			<li class="active"><a href="{:U('add')}">设备添加</a></li>
+		</ul>
+		<form class="form-horizontal js-ajax-form" method="post" action="{:U('add_post')}">
+			<fieldset>
+				<div class="control-group">
+					<label class="control-label" >设备分组</label>
+					<div class="controls">
+						<select name="dev_group_id">
+							<foreach name="dev_group" item="vo">
+								<option value="{$vo.id}">{$vo.name}</option>
+							</foreach>
+						</select>
+					</div>
+				</div>
+				<div class="control-group">
+					<label class="control-label" >设备名</label>
+					<div class="controls">
+						<input type="text" class="input-xlarge" name="dev_name">
+					</div>
+				</div>
+				<div class="control-group">
+					<label class="control-label" >imei</label>
+					<div class="controls">
+						<input type="text" class="input-xlarge" name="imei">
+					</div>
+				</div>
+				<div class="control-group">
+					<label class="control-label" >手机唯一吗</label>
+					<div class="controls">
+						<input type="text" class="input-xlarge" name="unique_id">
+					</div>
+				</div>
+				<div class="control-group">
+					<label class="control-label" >状态</label>
+					<div class="controls">
+						<label><input type="radio" class="input-xlarge" name="state" checked="" value="0">关闭</label>
+						<label><input type="radio" class="input-xlarge" name="state" value="1">启用</label>
+					</div>
+				</div>
+				<div class="form-actions">
+					<button type="submit" class="btn btn-primary  js-ajax-submit">{:L('SAVE')}</button>
+				</div>
+			</fieldset>
+		</form>
+	</div>
+	<script src="__PUBLIC__/js/common.js"></script>
+</body>
+</html>

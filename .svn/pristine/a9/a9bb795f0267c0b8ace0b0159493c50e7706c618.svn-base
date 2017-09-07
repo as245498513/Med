@@ -1,0 +1,118 @@
+<admintpl file="header"/>
+</head>
+<body>
+	<div class="wrap js-check-wrap">
+		<ul class="nav nav-tabs">
+			<li><a href="{:U('moments_comment_list')}">朋友圈评论</a></li>
+			<li class="active">
+				<a href="{:U('moments_comment_add')}">
+					<if condition="$info.id neq ''">
+						编辑
+						<else/>
+						新增
+					</if>
+				</a>
+			</li>
+		</ul>
+		<form class="form-horizontal " action="{:U('moments_comment_add_post')}" method="post">
+			<fieldset>
+
+				<div class="control-group">
+					<label class="control-label">评论数量</label>
+					<div class="controls">
+						<input type="text" name="comment_amount" value="{$info.comment_amount}" id="comment_amount"/>
+						<span class="form-required">*</span>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label">是否延时</label>
+					<div class="controls">
+						<empty name="info">
+							<input type="radio" name="is_delay" value="0" checked="checked"/>否&nbsp;&nbsp;
+							<input type="radio" name="is_delay" value="1"/>是
+							<else/>
+							<input type="radio" name="is_delay" value="0" <if condition="$info['is_delay'] eq 0">checked="checked"</if>/>否&nbsp;&nbsp;
+							<input type="radio" name="is_delay" value="1" <if condition="$info['is_delay'] eq 1">checked="checked"</if>/>是
+						</empty>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label">评论素材</label>
+					<div class="controls">
+						<a id="choose_source" class="btn btn-success " href="javascript:void(0)" >点击选择素材</a>
+						<span style="color: red">*点击则重新选择所有素材</span>
+						<ol id="show_source">
+							<notempty name="info">
+								<foreach name="info.source_list" item="vo" key="k">
+									<li>{$vo.title}</li>
+								</foreach>
+							</notempty>
+						</ol>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label">异步时长</label>
+					<div class="controls">
+						<input type="text" name="async" value="{$info.async}" id="async"/>
+						<span class="form-required">(分钟)*</span>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label">下发分组</label>
+					<div class="controls">
+						<input type="checkbox" class="js-check-all" data-direction="x" data-checklist="js-check-x">全选<br/>
+						<empty name="info">
+							<foreach name="device_group_list" item="vo" key="k">
+								<input class="js-check" data-yid="js-check-y" data-xid="js-check-x" type="checkbox" name="device_group_ids[]" value="{$vo.id}"/>{$vo.name}&nbsp;&nbsp;
+								<if condition="($k+1)%10 eq 0"><br/></if>
+							</foreach>
+							<else/>
+							<foreach name="info.device_group_list" item="vo" key="k">
+								<input class="js-check" data-yid="js-check-y" data-xid="js-check-x" type="checkbox" name="device_group_ids[]"  value="{$vo.id}" <in name="vo.id" value="$info.checked_ids">checked</in>/>{$vo.name}&nbsp;&nbsp;
+								<if condition="($k+1)%10 eq 0"><br/></if>
+							</foreach>
+						</empty>
+					</div>
+				</div>
+
+				<!--隐藏-->
+				<input type="text" name="edit_id" value="{$info.id}"  style="display: none"/>
+				<input type="text" name="source_ids" value="{$info.source_ids}" id="source_ids" style="display: none"/>
+			</fieldset>
+			<div class="form-actions">
+				<button type="submit" class="btn btn-primary js-ajax-submit">保存</button>
+				<a class="btn" href="javascript:history.back(-1);">关闭</a>
+			</div>
+		</form>
+	</div>
+	<script src="__PUBLIC__/js/common.js"></script>
+	<script src="__PUBLIC__/js/uploadify/jquery.uploadify.min.js" type="text/javascript"></script>
+	<script src="__PUBLIC__/js/layer/layer.js"></script>
+    <script type="text/javascript">
+		$(".choosefile").click(function(){
+            $("#photos_edit").remove();
+		});
+
+		$("#choose_source").click(function(){
+			//清空素材
+			//$('#show_source li').remove();
+			$('#source_ids').val();
+            //iframe层-父子操作
+			layer.open({
+				type: 2,
+				area: ['770px', '530px'],
+				title: '选择素材页',
+				fixed: false, //不固定
+				maxmin: true,
+				content: '{:U("source/moments_comments_list","choose_source=1")}'
+			});
+		});
+
+
+	</script>
+</body>
+</html>

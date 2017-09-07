@@ -1,0 +1,90 @@
+<admintpl file="header" />
+</head>
+<body>
+	<div class="wrap js-check-wrap">
+		<ul class="nav nav-tabs">
+			<li class="active"><a href="{:U('moments_comments_list')}">朋友圈评论素材</a></li>
+		</ul>
+		<form class="well form-search" method="post" action="{:U('moments_comments_list')}">
+			标题:
+			<input type="text" name="title" style="width: 200px;font-size:9px;" value="{$title}" placeholder="请输入标题">&nbsp;
+			内容:
+			<input type="text" name="content" style="width: 200px;font-size:9px;" value="{$content}" placeholder="请输入内容">&nbsp;
+
+			<input type="submit" class="btn btn-primary" value="搜索">
+			<if condition="sp_member_auth_check(sp_get_current_member_id(),'User/source/moments_comments_add')">
+			   <a class="btn btn-success" href="{:U('User/source/moments_comments_add')}">新增</a>
+			</if>
+			<if condition="sp_member_auth_check(sp_get_current_member_id(),'User/source/moments_comments_del_post')">
+			 <a class="btn btn-danger " href="javascript:void(0)" onclick="batch_del()">批量删除</a>
+			</if>
+		</form>
+		<table class="table table-hover table-bordered">
+			<thead>
+				<tr>
+					<th width="16"><label><input type="checkbox" class="js-check-all" data-direction="x" data-checklist="js-check-x"></label></th>
+					<th width="50">序号</th>
+					<th>标题</th>
+					<th>内容</th>
+					<th>录入时间</th>
+					<th width="120">操作</th>
+
+				</tr>
+			</thead>
+			<tbody>
+				<foreach name="list" item="vo">
+				<tr>
+					<td><input type="checkbox" class="js-check" data-yid="js-check-y" data-xid="js-check-x" name="ids[]" value="{$vo.id}"></td>
+					<td>{$vo.id}</td>
+					<td>{$vo.title}</td>
+					<td title="{$vo.comments_str}">{:mb_strimwidth($vo['comments_str'],0,40,"...","utf-8")}</td>
+					<td>{:date("Y-m-d H:i",$vo['createtime'])}</td>
+					<td>
+						<if condition="sp_member_auth_check(sp_get_current_member_id(),'User/source/moments_comments_edit')">
+						  <a href="{:U('moments_comments_edit')}/id/{$vo.id}">编辑</a>|
+						</if>
+						<if condition="sp_member_auth_check(sp_get_current_member_id(),'User/source/moments_comments_del_post')">
+							<a href="javascript:void(0)" onclick="batch_del('{$vo.id}')">删除</a>
+						</if>
+					</td>
+				</tr>
+				</foreach>
+			</tbody>
+		</table>
+		<div class="pagination">{$page}</div>
+	</div>
+	<script src="__PUBLIC__/js/common.js"></script>
+	<script src="__PUBLIC__/js/layer/layer.js"></script>
+    <script>
+	  function batch_del(id){
+		  var r=confirm("确定删除吗?");
+		  if (r==true){
+			  var ids=[];
+			  //单个删除
+			  if(id){
+				  ids[0]=id;
+			  }
+			  //批量删除
+			  $("input[name^='ids']:checked").each(function(i){
+				  ids[i]=$(this).val();
+			  });
+			  $.ajax({
+				  data:{ids:ids},
+				  type: "post",
+				  dataType:"json",
+				  url:"{:U('moments_comments_del_post')}",
+				  success:function(data){
+                      if(data.code==0){
+						  alert(data.data+"条数据"+data.message);
+						  location.reload();
+					  }else{
+						  alert(data.message);
+					  }
+				  }
+			  });
+		  }
+	  }
+
+	</script>
+</body>
+</html>

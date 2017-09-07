@@ -1,0 +1,24 @@
+<?php
+namespace Common\Model;
+use Common\Model\CommonModel;
+class SellOrderModel extends CommonModel
+{
+	protected $_validate = array(
+		//array(验证字段,验证规则,错误提示,验证条件,附加规则,验证时间)
+		array('goods_num', 'require', '数量不能为空！', 1, 'regex', CommonModel:: MODEL_BOTH ),
+		array('goods_num', 'number', '数量请输入数字！' ),
+
+		array('goods_price', 'require', '单价不能为空！', 1, 'regex', CommonModel:: MODEL_BOTH ),
+		array('goods_price', '/^(([0-9]+\.[0-9]*[1-9][0-9]*)|([0-9]*[1-9][0-9]*\.[0-9]+)|([0-9]*[1-9][0-9]*))$/', '单价输入不正确！' ),
+
+		array('customer_name', 'require', '顾客姓名不能为空！', 1, 'regex', CommonModel:: MODEL_BOTH ),
+
+		array('customer_contact', 'require', '联系方式不能为空！', 1, 'regex', CommonModel:: MODEL_BOTH ),
+
+	);
+
+	function is_numeric(){
+
+	}
+}
+

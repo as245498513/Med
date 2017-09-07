@@ -1,0 +1,57 @@
+<admintpl file="header"/>
+</head>
+<body>
+	<div class="wrap js-check-wrap">
+		<ul class="nav nav-tabs">
+			<li ><a href="{:U('class_list')}">素材分类列表</a></li>
+			<li class="active">
+				<a href="{:U('code_add')}">
+					<if condition="$class_info.id neq ''">
+						 编辑分类
+                         <else/>
+						 新增分类
+					</if>
+			    </a>
+			</li>
+		</ul>
+		<form class="form-horizontal js-ajax-form" action="{:U('Source/class_add_post')}" method="post">
+			<fieldset>
+				<div class="control-group">
+					<label class="control-label">分类名称</label>
+					<div class="controls">
+						<input type="text" name="class_name" value="{$class_info.class_name}" id="class_name"/>
+						<span class="form-required">*</span>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label">分类排序</label>
+					<div class="controls">
+						<input type="text" name="class_sort" value="{$class_info.class_sort}" id="class_sort"/>
+						<span class="form-required">*(1-10000)</span>
+					</div>
+				</div>
+
+				<div class="control-group">
+					<label class="control-label">素材类型</label>
+					<div class="controls">
+						<select name="source_type">
+							<option value="1" <if condition="$class_info.source_type eq '1'">selected="selected"</if> >朋友圈图文素材</option>
+							<option value="2" <if condition="$class_info.source_type eq '2'">selected="selected"</if>>小视频素材</option>
+							<option value="3" <if condition="$class_info.source_type eq '3'">selected="selected"</if>>图片素材</option>
+						</select>
+						<span class="form-required">*</span>
+					</div>
+				</div>
+				<!--隐藏-->
+				<input type="text" name="class_id" value="{$class_info.id}" id="class_id" style="display: none"/>
+			</fieldset>
+			<div class="form-actions">
+				<button type="submit" class="btn btn-primary js-ajax-submit">保存</button>
+				<a class="btn" href="javascript:history.back(-1);">关闭</a>
+			</div>
+		</form>
+	</div>
+	<script src="__PUBLIC__/js/common.js"></script>
+</body>
+</html>

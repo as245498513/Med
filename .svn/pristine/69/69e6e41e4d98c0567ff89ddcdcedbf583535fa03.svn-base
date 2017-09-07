@@ -1,0 +1,332 @@
+<?php
+// +----------------------------------------------------------------------
+// | ThinkCMF [ WE CAN DO IT MORE SIMPLE ]
+// +----------------------------------------------------------------------
+// | Copyright (c) 2013-2014 http://www.thinkcmf.com All rights reserved.
+// +----------------------------------------------------------------------
+// | Author: Tuolaji <479923197@qq.com>
+// +----------------------------------------------------------------------
+/**
+ */
+namespace Admin\Controller;
+use Common\Controller\AdminbaseController;
+use Org\Net\Http;
+class ReportController extends AdminbaseController {
+
+    /**
+     * 陌陌注册账号信息列表页面
+     * 生产仓库
+     */
+    public function momo_regist_list(){
+        $regist_log_model = M("XxtScriptRegisterLog");
+        $register_username  = trim(I('register_username'));//去除空格
+        $sell_staus  = I('sell_staus',1);//默认未售
+        $account_status  = I('account_status',1);//默认正常
+        $dev_name  = I('dev_name');//设备名
+        $start_time = I('start_time');
+        $end_time   = I('end_time');
+
+        //条件查询
+        if($register_username){
+            $where['register_username'] =  array('like','%'.$register_username.'%');
+        }
+        if($sell_staus!=0){
+            $where['sell_staus'] = $sell_staus;
+        }
+        if($account_status!=0){
+            $where['account_status'] = $account_status;
+        }
+        if($dev_name){
+            $where['dev_name'] = array('like','%'.$dev_name.'%');
+        }
+
+        //时间筛选
+        if($start_time){
+            $start_time_st =  strtotime($start_time);
+            $where['createtime'] = array('egt',$start_time_st);
+        }
+        if($end_time){
+            $end_time_st =  strtotime($end_time)+60;
+            $where['createtime'] = array('elt',$end_time_st);
+        }
+        if($start_time&&$end_time){
+            $start_time_st =  strtotime($start_time);
+            $end_time_st =  strtotime($end_time)+60;
+            $where['createtime'] = array('between',array($start_time_st,$end_time_st));
+        }
+        $count = $regist_log_model->where($where)->count();
+        $page = $this->page($count, 15);
+
+        $list = $regist_log_model->where($where)->order('createtime desc') ->limit($page->firstRow, $page->listRows)->select();
+
+        $this->assign("list",$list);
+        $this->assign("register_username",$register_username);
+        $this->assign("sell_staus",$sell_staus);
+        $this->assign("account_status",$account_status);
+        $this->assign("start_time",$start_time);
+        $this->assign("end_time",$end_time?$end_time:date('Y-m-d H:i',NOW_TIME));
+        $this->assign("page", $page->show('Admin'));
+        $this->display();
+    }
+
+    /**
+     * 更改销售状态
+     */
+    public function momo_regist_edit(){
+         $id = I('id');
+         $status = I('status');
+
+        $save = array(
+            'sell_staus'=>$status
+        );
+        $rs =  M('XxtScriptRegisterLog')->where(array('id'=>$id))->save($save);
+        if($rs>0){
+            $return  = array('code'=>0,'message'=>'状态更改成功');
+        }else{
+            $return  = array('code'=>-1,'message'=>'状态无需更改');
+        }
+        $this->ajaxReturn($return);
+    }
+
+    /**
+     * 导出excel
+     */
+    public function momo_regist_toexcel(){
+        $regist_log_model = M("XxtScriptRegisterLog");
+        //筛选条件
+        $register_username  = trim(I('register_username'));//去除空格
+        $sell_staus  = I('sell_staus',1);//默认未售
+        $account_status  = I('account_status',1);//默认正常
+        $is_file_upload  = I('is_file_upload','');//文件是否上传
+        $dev_name = I('dev_name');
+        $start_time = I('start_time');
+        $end_time   = I('end_time');
+        $timetype   = I('timetype');
+        $ids = I('ids');
+
+        if($ids){
+            $ids_arr = explode(",",$ids);
+            if(!$ids_arr){
+                $where['id'] = $ids;
+            }else{
+                $where['id'] = array('in',$ids);
+            }
+        }else{
+            //条件查询
+            if($register_username){
+                $where['register_username'] =  array('like','%'.$register_username.'%');
+            }
+            if($sell_staus!=0){
+                $where['sell_staus'] = $sell_staus;
+            }
+            if($account_status!=0){
+                $where['account_status'] = $account_status;
+            }
+
+            if($is_file_upload!=-1&&$is_file_upload!=''){
+                $where['is_file_upload'] = $is_file_upload;
+            }
+
+            if($dev_name){
+                $where['dev_name'] = array('like','%'.$dev_name.'%');
+            }
+
+            //时间筛选
+            if($timetype!='last_check_time'){
+                $timetype = 'createtime';
+            }
+
+            //注册时间大于3天的号
+            $where['createtime'] = array('elt',NOW_TIME-3*24*60*60);
+
+
+            if($start_time){
+                $start_time_st =  strtotime($start_time);
+                $where[$timetype] = array('egt',$start_time_st);
+            }
+            if($end_time){
+                $end_time_st =  strtotime($end_time)+60;
+                $where[$timetype] = array('elt',$end_time_st);
+            }
+            if($start_time&&$end_time){
+                $start_time_st =  strtotime($start_time);
+                $end_time_st =  strtotime($end_time)+60;
+                $where[$timetype] = array('between',array($start_time_st,$end_time_st));
+            }
+        }
+
+        $list = $regist_log_model->where($where)->order('createtime desc') ->select();
+
+        //整理导出数据
+        $result = array();
+        foreach($list as $key=>$value){
+            $result[$key]['register_username'] = $value['register_username']." ";
+            $result[$key]['register_password'] = $value['register_password']." ";
+            $result[$key]['register_mobile']   =  $value['register_mobile']." ";
+            $result[$key]['createtime']   =  date('Y-m-d H:i',$value['createtime'])."";
+            $result[$key]['dev_name']   =  $value['dev_name']." ";
+            $result[$key]['order_no']   =  $value['dev_name']."-".date('Y-m-d H:i',$value['createtime'])."-".$value['id']." ";
+        }
+        //导出excel
+        $title_arr=array('账号','密码','手机号码','注册时间','设备名','生产单号');
+        if(empty($result)){
+            $this->error("导出文件为空，请注意筛选条件");
+        }else{
+            export_Excel("陌陌账号",$result,$title_arr,$start_time_st?date('Y-m-d',$start_time_st):'',$end_time_st?date('Y-m-d',$end_time_st):'');
+        }
+    }
+
+    /**
+     * 陌陌注册账号信息列表页面
+     */
+    public function momo_regist_list_ok(){
+        $regist_log_model = M("XxtScriptRegisterLog");
+        $register_username  = trim(I('register_username'));//去除空格
+        $is_file_upload = I('is_file_upload',-1);
+        $account_status = I('account_status',1);
+        $start_time = I('start_time');
+        $end_time   = I('end_time');
+
+        //条件查询
+        if($register_username){
+            $where['register_username'] =  array('like','%'.$register_username.'%');
+        }
+
+        if($is_file_upload!=-1){
+            $where['is_file_upload'] = $is_file_upload;
+        }
+        //默认查询未售和正常的号
+        $where['sell_staus'] = 1;
+        if($account_status!=0){
+            $where['account_status'] = $account_status;
+        }
+        //注册时间大于3天的号
+        $where['createtime'] = array('elt',NOW_TIME-3*24*60*60);
+
+        //时间筛选
+        if($start_time){
+            $start_time_st =  strtotime($start_time);
+            $where['last_check_time'] = array('egt',$start_time_st);
+        }
+        if($end_time){
+            $end_time_st =  strtotime($end_time)+60;
+            $where['last_check_time'] = array('elt',$end_time_st);
+        }
+        if($start_time&&$end_time){
+            $start_time_st =  strtotime($start_time);
+            $end_time_st =  strtotime($end_time)+60;
+            $where['last_check_time'] = array('between',array($start_time_st,$end_time_st));
+        }
+        $count = $regist_log_model->where($where)->count();
+        $page = $this->page($count, 15);
+
+        $list = $regist_log_model->where($where)->order('createtime asc')->limit($page->firstRow, $page->listRows)->select();
+
+
+        $this->assign("list",$list);
+        $this->assign("register_username",$register_username);
+        $this->assign("is_file_upload",$is_file_upload);
+        $this->assign("account_status",$account_status);
+        $this->assign("start_time",$start_time);
+        $this->assign("end_time",$end_time);
+        $this->assign("page", $page->show('Admin'));
+        $this->display();
+    }
+
+    /**
+     * 陌陌注册账号信息列表页面
+     */
+    public function momo_check_detail_list(){
+        $username = I('username');
+        $where['register_username'] = $username;
+        $count = M('xxt_script_account_check_log')->where($where)->count();
+        $page = $this->page($count, 15);
+        $list = M('xxt_script_account_check_log')->where($where)->limit($page->firstRow, $page->listRows)->select();
+        $this->assign('list',$list);
+        $this->assign("page", $page->show('Admin'));
+        $this->display();
+    }
+
+    /**
+     * 成品库导出excel
+     */
+    public function momo_regist_toexcel_ok(){
+        $regist_log_model = M("XxtScriptRegisterLog");
+        //筛选条件
+        $register_username  = trim(I('register_username'));//去除空格
+        $sell_staus  = I('sell_staus',1);//默认未售
+        $account_status  = I('account_status',1);//默认正常
+        $is_file_upload  = I('is_file_upload','');//文件是否上传
+        $start_time = I('start_time');
+        $end_time   = I('end_time');
+        $timetype   = I('timetype');
+        $ids = I('ids');
+
+        if($ids){
+            $ids_arr = explode(",",$ids);
+            if(!$ids_arr){
+                $where['id'] = $ids;
+            }else{
+                $where['id'] = array('in',$ids);
+            }
+        }else{
+            //条件查询
+            if($register_username){
+                $where['register_username'] =  array('like','%'.$register_username.'%');
+            }
+            if($sell_staus!=0){
+                $where['sell_staus'] = $sell_staus;
+            }
+            if($account_status!=0){
+                $where['account_status'] = $account_status;
+            }
+
+            if($is_file_upload!=-1&&$is_file_upload!=''){
+                $where['is_file_upload'] = $is_file_upload;
+            }
+
+            //时间筛选
+            if($timetype!='last_check_time'){
+                $timetype = 'createtime';
+            }
+
+            //注册时间大于3天的号
+            $where['createtime'] = array('elt',NOW_TIME-3*24*60*60);
+
+            if($start_time){
+                $start_time_st =  strtotime($start_time);
+                $where[$timetype] = array('egt',$start_time_st);
+            }
+            if($end_time){
+                $end_time_st =  strtotime($end_time)+60;
+                $where[$timetype] = array('elt',$end_time_st);
+            }
+            if($start_time&&$end_time){
+                $start_time_st =  strtotime($start_time);
+                $end_time_st =  strtotime($end_time)+60;
+                $where[$timetype] = array('between',array($start_time_st,$end_time_st));
+            }
+        }
+
+        $list = $regist_log_model->where($where)->order('createtime asc') ->select();
+
+        //整理导出数据
+        $result = array();
+        foreach($list as $key=>$value){
+            $result[$key]['register_username'] = $value['register_username']." ";
+            $result[$key]['register_password'] = $value['register_password']." ";
+            $result[$key]['register_mobile']   =  $value['register_mobile']." ";
+            $result[$key]['createtime']   =  date('Y-m-d H:i:s',$value['createtime'])."";
+            $result[$key]['dev_name']   =  $value['dev_name']." ";
+            $result[$key]['order_no']   =  $value['dev_name']."-".date('Y-m-d',$value['createtime'])."-".$value['id']." ";
+        }
+        //导出excel
+        $title_arr=array('账号','密码','手机号码','注册时间','设备名','生产单号');
+        if(empty($result)){
+            $this->error("导出文件为空，请注意筛选条件");
+        }else{
+            export_Excel("陌陌账号",$result,$title_arr,$start_time_st?date('Y-m-d',$start_time_st):'',$end_time_st?date('Y-m-d',$end_time_st):'');
+        }
+    }
+
+}

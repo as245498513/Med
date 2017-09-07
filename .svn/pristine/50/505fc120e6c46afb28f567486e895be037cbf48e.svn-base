@@ -1,0 +1,119 @@
+<?php
+namespace Api\Controller;
+use Common\Controller\XxtbaseController;
+
+
+class XxtmomoController extends XxtbaseController{
+
+
+	/**
+	 * 授权检测
+	 * @return [type] [description]
+	 */
+	public function auth_device_check(){
+		$udid = I('udid');
+		$serial_number  = I('serial_number');
+		$where = array(
+			'udid'=>$udid,
+			'serial_number'=>$serial_number,
+		);
+		//搜索当前设备是否授权
+		$ac = M('xxtmomo_device_auth')->where($where)->order('overtime desc')->find();
+		if(empty($ac)){
+			$this->returnCode(2);
+		}
+
+		if($ac['overtime'] <= NOW_TIME){
+			$this->returnCode(3);
+		}
+		$remark = array(
+			'overtime'=>$ac['overtime'],
+		);
+		$this->returnCode(6,$remark);
+	}
+
+	/**
+	 * 设备授权
+	 * @return [type] [description]
+	 */
+	public function auch_device_reg(){
+		$udid = I('udid');
+		$serial_number  = I('serial_number');
+		$auth_code  = I('auth_code');
+		$where = array(
+			'auth_code'=>$auth_code,
+			'settime'=>0
+		);
+		$xxtmomo_code_info = M('xxtmomo_code')->where($where)->field('id,duration')->find();
+		if(empty($xxtmomo_code_info)){
+			$this->returnCode(4);
+		}
+		$save = array(
+			'serial_number'=>$serial_number,
+			'udid'=>$udid,
+			'settime'=>NOW_TIME
+		);
+		$ac = M('xxtmomo_code')->where(array('id'=>$xxtmomo_code_info['id'])) 
+		->save($save);
+		if($ac){
+			$device_auth_where = array(
+				'udid'=>$udid,
+				'serial_number'=>$serial_number
+			);
+			//搜索当前设备是否授权
+			$device_auth_overtime = M('xxtmomo_device_auth')->where($device_auth_where)->order('overtime desc')->getField("overtime");
+			$overtime = NOW_TIME;
+			if($device_auth_overtime){
+				if($device_auth_overtime >= NOW_TIME){
+					$overtime = $device_auth_overtime;
+				}
+				
+			}
+			$add = array(
+				'xxtmomo_code_id'=>$xxtmomo_code_info['id'],
+				'udid'=>$udid,
+				'serial_number'=>$serial_number,
+				'overtime'=>$overtime * (86400*$xxtmomo_code_info['duration']),
+			);
+			M('xxtmomo_device_auth')->add($add);
+			$this->returnCode(1);
+		}else{
+			$this->returnCode(5);
+		}
+	}
+
+
+
+	private function returnCode($code,$remark){
+		switch ($code) {
+			case 1:
+				$message = "授权成功";
+				break;
+			case 2:
+				$message = "设备未授权";
+				break;
+			case 3:
+				$message = "设备授权过期";
+				break;
+			case 4:
+				$message = "授权码错误或已被使用";
+				break;
+			case 5:
+				$message = "授权失败";
+				break;
+			case 6:
+				$message = "拉取验证成功";
+				break;
+			default:
+				# code...
+				break;
+		}
+		$return = array(
+			'code'=>$code,
+			'message'=>$message,
+			'remark'=>$remark,
+		);
+		$this->ajaxReturn($return);	
+	}
+
+}

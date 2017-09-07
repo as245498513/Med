@@ -1,0 +1,109 @@
+<admintpl file="header" />
+</head>
+<body>
+	<div class="wrap js-check-wrap">
+		<ul class="nav nav-tabs">
+			<li class="active"><a href="{:U('code_list')}">授权码列表</a></li>
+			<li><a href="{:U('code_add')}">添加授权码</a></li>
+		</ul>
+		<form class="well form-search" method="post" action="{:U('code_list')}">
+			类型：
+			<select id="type" name="type" style="width: 80px;">
+				<option value="0"<if condition="$type eq '0'">selected="selected"</if>>全部</option>
+				<option value="momo" <if condition="$type eq 'momo'">selected="selected"</if>>陌陌</option>
+				<option value="wechat" <if condition="$type eq 'wechat'">selected="selected"</if>>微信</option>
+				<option value="alipay_mobile_5pay" <if condition="$type eq 'alipay_mobile_5pay'">selected="selected"</if>>支付宝5元优惠券</option>
+			</select>
+			授权码:
+			<input type="text" name="auth_code" style="width: 200px;font-size:9px;" value="{$auth_code}" placeholder="请输入授权码">&nbsp;
+			创建时间：
+			<input type="text" name="start_time" class="js-datetime" value="{$start_time|default=''}" style="width: 130px;" placeholder="起始时间" autocomplete="off">-
+			<input type="text" class="js-datetime" name="end_time" value="{$end_time|default=''}" style="width: 130px;" placeholder="结束时间" autocomplete="off"> &nbsp;
+			<input type="submit" class="btn btn-primary" value="搜索">
+			<!--<a class="btn btn-danger" href="javascript:void(0)" onclick="clearall()">清空</a>-->
+			<a class="btn btn-danger" href="javascript:void(0)" onclick="toexcel()">导出excel</a>
+		</form>
+		<table class="table table-hover table-bordered">
+			<thead>
+				<tr>
+					<th width="50">序号</th>
+					<th>授权码</th>
+					<th>创建时间</th>
+					<th>有效期限（天）</th>
+					<!--<th>手机序列号</th>-->
+					<!--<th>手机UDID</th>-->
+					<th>使用时间</th>
+					<th>类型</th>
+					<th width="120">操作</th>
+				</tr>
+			</thead>
+			<tbody>
+
+				<foreach name="list" item="vo">
+				<tr>
+					<td>{$vo.id}</td>
+					<td>{$vo.auth_code}</td>
+					<td>{:date("Y-m-d H:i",$vo['createtime'])}</td>
+					<td>{$vo.valid_time}</td>
+					<!--<td>{$vo.serial_number}</td>-->
+					<!--<td>{$vo.unique_id}</td>-->
+					<td><if condition="$vo.starttime eq 0">未使用<else />{:date("Y-m-d H:i",$vo['starttime'])}</if></td>
+					<td>
+						<switch name="vo.type" >
+						 <case value="momo">陌陌</case>
+						 <case value="wechat">微信</case>
+						 <case value="alipay_mobile_5pay">支付宝5元优惠券</case>
+					     </switch>
+					</td>
+					<td>
+						<a class="btn btn-danger btn-small" href="{:U('download_qrcode')}/code/{$vo.auth_code}" >下载二维码</a>
+					</td>
+				</tr>
+				</foreach>
+			</tbody>
+		</table>
+		<div class="pagination">{$page}</div>
+	</div>
+	<script src="__PUBLIC__/js/common.js"></script>
+    <script>
+		function toexcel(){
+			start_time = $("input[name=start_time]").val();
+			end_time  = $("input[name=end_time]").val();
+			auth_code = $("input[name=auth_code]").val();
+			type = $('#type option:selected') .val();
+
+			var url = 'code_toexcel';
+			if(start_time){
+				url += '/start_time/'+start_time;
+			}
+			if(end_time){
+				url += '/end_time/'+end_time;
+			}
+			if(auth_code){
+				url += '/auth_code/'+auth_code;
+			}
+			if(type){
+				url += '/type/'+type;
+			}
+			window.location.href="{:U('"+url+"')}";
+		}
+		function clearall(){
+			start_time = $("input[name=start_time]").val('');
+			end_time  = $("input[name=end_time]").val('');
+			auth_code = $("input[name=auth_code]").val('');
+		}
+		function export_qrcode(){
+			start_time = $("input[name=start_time]").val();
+			end_time  = $("input[name=end_time]").val();
+			var url = 'export_qrcode';
+			if(start_time){
+				url += '/start_time/'+start_time;
+			}
+			if(end_time){
+				url += '/end_time/'+end_time;
+			}
+			window.location.href="{:U('"+url+"')}";
+		}
+	</script>
+</body>
+</html>

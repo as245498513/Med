@@ -1,0 +1,277 @@
+<?php
+namespace Api\Controller;
+use Common\Controller\XxtbaseController;
+use Org\Net\Http;
+
+
+class XxtController extends XxtbaseController{
+
+	public function index(){
+
+	}
+	/**
+	 * 授权检测
+	 * @interface 2.2
+	 * @return array returnMsg
+	 */
+	public function auth_device_check(){
+		//授权参数
+		$unique_id = I('unique_id');
+
+		if(empty($unique_id)){
+			$this->returnMsg(-2);
+		}
+
+		$where = array(
+			'unique_id'=>$unique_id
+		);
+		//搜索当前设备授权是否有效
+		$recent_dev = M('xxt_device_auth')->where($where)->order('overtime desc')->find();
+
+		if(empty($recent_dev)){
+			$this->returnMsg(-10000,'设备未授权');
+		}
+		else if($recent_dev['overtime'] < NOW_TIME){
+			$this->returnMsg(-10001,'设备授权过期');
+		}
+		else{
+			$this->returnMsg(10000,'设备已授权');
+		}
+	}
+
+	/**
+	 * 设备授权
+	 * @interface 2.1
+	 * @return array returnMsg
+	 */
+	public function auth_device(){
+		//参数
+		$unique_id = I('unique_id');
+		$dev_name = I('dev_name');
+		$imei = I('imei','123456789');
+		$auth_code  = I('auth_code');
+		$serial_number  = I('serial_number');
+		$auth_ip  = I('auth_ip');
+
+        //参数检查
+		if(empty($unique_id)||empty($dev_name)||empty($imei)||empty($auth_code)||empty($auth_ip)||empty($serial_number)){
+           $this->returnMsg(-2);
+		}
+
+		$where = array(
+			'auth_code'=>$auth_code,
+		);
+
+		//查询授权码是否有效
+		$code_info = M('xxt_code')->where($where)->find();
+
+		if(empty($code_info)){
+			$this->returnMsg(-20000,'授权码不存在');
+		}
+		if($code_info['starttime']!=0){
+			if(($code_info['starttime']+$code_info['valid_time']*24*60*60)<NOW_TIME){
+				$this->returnMsg(-20001,'授权码已过期');
+			}else{
+				$this->returnMsg(20000,'授权码已使用');
+			}
+		}
+
+        //检测设备是否已授权
+		$recent_dev = M('xxt_device_auth')->where(array('unique_id'=>$unique_id))->order('overtime desc')->find();
+
+		if($recent_dev['overtime'] > NOW_TIME){
+			$this->returnMsg(10000,'设备已授权');
+		}
+		$save = array(
+			'starttime'=>NOW_TIME,
+			'unique_id'=>$unique_id,
+			'serial_number'=>$serial_number
+		);
+		//开始授权
+		$rs = M('xxt_code')->where(array('auth_code'=>$auth_code))->save($save);
+		if($rs){
+			$add = array(
+				'xxt_code_id'=>$code_info['id'],
+				'unique_id'=>$unique_id,
+				'dev_name'=>$dev_name,
+				'overtime'=>NOW_TIME+$code_info['valid_time']*24*60*60,
+				'auth_code'=>$code_info['auth_code'],
+				'imei'=>$imei,
+				'auth_ip'=>$auth_ip,
+				'serial_number'=>$serial_number
+			);
+			$rs = M('xxt_device_auth')->add($add);
+			if($rs){
+				$this->returnMsg(10001,'授权成功');
+			}else{
+				$this->returnMsg(-10002,'授权失败');
+			}
+		}else{
+			$this->returnMsg(-10002,'授权失败');
+		}
+	}
+
+	/**
+	 * 错误日志
+	 * @interface 2.3
+	 * @return array returnMsg
+	 */
+	public function error_log(){
+		//参数
+		$dev_name = I('dev_name');
+		$unique_id = I('unique_id');
+		$dev_ip = I('dev_ip');
+		$content = I('content');
+
+		if(empty($dev_name)||empty($unique_id)||empty($dev_ip)||empty($content)){
+			$this->returnMsg(-2);
+		}
+
+		$error_log_model = M('xxt_script_error_log');
+		$add = array(
+			'dev_name'=>$dev_name,
+			'unique_id'=>$unique_id,
+			'ip'=>$dev_ip,
+			'content'=>$content,
+			'createtime'=>NOW_TIME,
+		);
+		$rs = $error_log_model->add($add);
+		if($rs){
+			$this->returnMsg(0);
+		}else{
+			$this->returnMsg(-1);
+		}
+
+	}
+
+	/**
+	 * 获取脚本最新版本
+	 * @interface 2.4
+	 * @return array returnMsg
+	 */
+	public function check_script_version(){
+		//参数
+		$unique_id = I('unique_id');
+		$script_version = I('script_version');
+		$script_name = I('script_name');
+		if(empty($unique_id)||empty($script_version)||empty($script_name)){
+			$this->returnMsg(-2);
+		}
+
+		//file_put_contents('./1.txt', $unique_id .' '. $script_version .' '. $script_name);
+
+		//检测版本号是否最新
+		$sv = M('xxt_script_version')->where(array('script_name'=>$script_name))->order('script_version desc')->getField('script_version');
+		if($script_version==$sv){
+			$this->returnMsg(30000,'当前脚本已最新');
+		}
+		elseif($script_version<$sv){
+			$data = array(
+				'latest version'=>$sv
+			);
+			$this->returnMsg(30001,'当前脚本需更新',$data);
+		}
+		if(!$sv){
+            $this->returnMsg(-30000,'无此脚本');
+		}
+	}
+	/**
+	 * 脚本下载
+	 * @interface 2.5
+	 * @param string $version      版本号
+	 * @param string $script_name  脚本名
+	 * @param string $unique_id    设备唯一id
+	 */
+	public function download(){
+		//参数
+		$version = I('version');
+		$script_name = I('script_name');
+		$unique_id = I('unique_id');
+
+		if(empty($version)||empty($unique_id)||empty($script_name)){
+			$this->returnMsg(-2);
+		}
+
+		//检测设备授权是否到期
+		$where = array(
+			'unique_id'=>$unique_id
+		);
+		$recent_dev = M('xxt_device_auth')->where($where)->order('overtime desc')->find();
+		if(empty($recent_dev)){
+			$this->returnMsg(-10000,'设备未授权');
+		}
+		else if($recent_dev['overtime'] < NOW_TIME){
+			$this->returnMsg(-10001,'设备授权过期');
+		}
+		else{
+            //设备已授权
+			//允许下载最新的脚本
+			$upload_path = C('SCRIPT_UPLOAD_PATH');
+			$filename = $upload_path.$version.'/'.$script_name.'.xxt';
+			import('ORG.Net.Http');
+			Http::download($filename,$script_name.'.xxt');
+		}
+	}
+
+
+	/**
+	 * 账号注册信息日志
+	 * @interface 2.6
+	 * @return array returnMsg
+	 */
+	public function register_info_log(){
+        //参数
+		$dev_name  = I('dev_name');
+		$unique_id = I('unique_id');
+		$dev_ip = I('dev_ip');
+		$register_type = I('register_type');
+		$register_info = I('register_info');
+
+		if(empty($dev_name)||empty($unique_id)||empty($dev_ip)||empty($register_type)||empty($register_info)){
+			$this->returnMsg(-2);
+		}
+		$register_log_model = M('xxt_script_register_log');
+		$add = array(
+            'dev_name'=>$dev_name,
+			'unique_id'=>$unique_id,
+			'dev_ip'=>$dev_ip,
+			'register_type'=>$register_type,
+			'register_info'=>serialize($register_info),
+			'createtime'=>NOW_TIME
+		);
+		$rs = $register_log_model->add($add);
+		if($rs){
+			$this->returnMsg(0);
+		}else{
+			$this->returnMsg(-1);
+		}
+
+	}
+
+
+	private function returnMsg($code,$message=null,$data=null){
+		//常用
+		switch ($code) {
+			case -2:
+				$message = "参数错误";
+				break;
+			case -1:
+				$message = "失败";
+				break;
+			case 0:
+				$message = "成功";
+				break;
+
+			default:
+				# code...
+				break;
+		}
+		$return = array(
+			'code'=>$code,
+			'message'=>$message,
+			'data'=>$data,
+		);
+		$this->ajaxReturn($return);
+	}
+
+}

@@ -1,0 +1,394 @@
+<?php
+namespace Api\Controller;
+use Common\Controller\XxtbaseController;
+use Org\Net\Http;
+
+
+class XxtController extends XxtbaseController{
+
+	public function index(){
+
+	}
+	/**
+	 * 授权检测
+	 * @interface 2.2
+	 * @return array returnMsg
+	 */
+	public function auth_device_check(){
+		//授权参数
+		$unique_id = I('unique_id');
+		$type = I('type');
+
+		if(empty($unique_id)||empty($type)){
+			$this->returnMsg(-2);
+		}
+
+		$where = array(
+			'unique_id'=>$unique_id,
+			'type'=>$type
+		);
+		//搜索当前设备授权是否有效
+		$recent_dev = M('xxt_device_auth')->where($where)->order('overtime desc')->find();
+
+		if(empty($recent_dev)){
+			$this->returnMsg(-10000,'设备未授权');
+		}
+		else if($recent_dev['overtime'] < NOW_TIME){
+			$this->returnMsg(-10001,'设备授权过期');
+		}
+		else{
+			$this->returnMsg(10000,'设备已授权',$recent_dev['overtime']);
+		}
+	}
+
+	/**
+	 * 设备授权
+	 * @interface 2.1
+	 * @return array returnMsg
+	 */
+	public function auth_device(){
+		//参数
+		$unique_id = I('unique_id');
+		$dev_name = I('dev_name');
+		$auth_code  = I('auth_code');
+		$serial_number  = I('serial_number');
+		$auth_ip  = I('auth_ip');
+		$type = I("type");
+
+        //参数检查
+		if(empty($unique_id)||empty($dev_name)||empty($auth_code)||empty($auth_ip)||empty($serial_number)||empty($type)){
+           $this->returnMsg(-2);
+		}
+
+		$where = array(
+			'auth_code'=>$auth_code,
+			'type'=>$type
+		);
+
+		//查询授权码是否有效
+		$code_info = M('xxt_code')->where($where)->find();
+
+		if(empty($code_info)){
+			//授权码不存在
+			$this->returnMsg(-20000,'授权码无效');
+		}
+		if($code_info['starttime']!=0){
+			$this->returnMsg(-20000,'授权码无效');
+			/*if(($code_info['starttime']+$code_info['valid_time']*24*60*60)<NOW_TIME){
+				//授权码过期
+				$this->returnMsg(-20001,'授权码无效');
+			}else{
+				$this->returnMsg(20000,'授权码无效');
+			}*/
+		}
+
+        //检测设备是否已授权
+		$recent_dev = M('xxt_device_auth')->where(array('unique_id'=>$unique_id,'type'=>$type))->order('overtime desc')->find();
+
+		$save = array(
+			'starttime'=>NOW_TIME,
+			'unique_id'=>$unique_id,
+			'serial_number'=>$serial_number
+		);
+		//开始授权
+		$rs = M('xxt_code')->where(array('auth_code'=>$auth_code,'type'=>$type))->save($save);
+		if($rs){
+			$overtime = 0;
+			if($recent_dev['overtime'] > NOW_TIME){
+				//授权未到期，续期
+				$overtime = $recent_dev['overtime']+$code_info['valid_time']*24*60*60;
+			}else{
+				//授权已到期，重新授权
+				$overtime = NOW_TIME+$code_info['valid_time']*24*60*60;
+			}
+			$add = array(
+				'unique_id'=>$unique_id,
+				'dev_name'=>$dev_name,
+				'overtime'=>$overtime,
+				'auth_code'=>$code_info['auth_code'],
+				'auth_ip'=>$auth_ip,
+				'serial_number'=>$serial_number,
+				'type'=>$type
+			);
+			$rs = M('xxt_device_auth')->add($add);
+			if($rs){
+				$this->returnMsg(10001,'授权成功');
+			}else{
+				$this->returnMsg(-10002,'授权失败');
+			}
+		}else{
+			$this->returnMsg(-10002,'授权失败');
+		}
+	}
+
+	/**
+	 * 错误日志
+	 * @interface 2.3
+	 * @return array returnMsg
+	 */
+	public function error_log(){
+		//检测设备授权
+		$this->check_auth_device();
+		//参数
+		$dev_name = I('dev_name');
+		$unique_id = I('unique_id');
+		$dev_ip = I('dev_ip');
+		$content = I('content');
+
+		if(empty($dev_name)||empty($unique_id)||empty($dev_ip)||empty($content)){
+			$this->returnMsg(-2);
+		}
+
+		$error_log_model = M('xxt_script_error_log');
+		$add = array(
+			'dev_name'=>$dev_name,
+			'unique_id'=>$unique_id,
+			'ip'=>$dev_ip,
+			'content'=>$content,
+			'createtime'=>NOW_TIME,
+		);
+		$rs = $error_log_model->add($add);
+		if($rs){
+			$this->returnMsg(0);
+		}else{
+			$this->returnMsg(-1);
+		}
+
+	}
+
+	/**
+	 * 获取脚本最新版本
+	 * @interface 2.4
+	 * @return array returnMsg
+	 */
+	public function check_script_version(){
+		//检测设备授权
+		$this->check_auth_device();
+		//参数
+		$unique_id = I('unique_id');
+		$script_version = I('script_version');
+		$script_name = I('script_name');
+		if(empty($unique_id)||empty($script_version)||empty($script_name)){
+			$this->returnMsg(-2);
+		}
+
+		//file_put_contents('./1.txt', $unique_id .' '. $script_version .' '. $script_name);
+
+		//检测版本号是否最新
+		$sv = M('xxt_script_version')->where(array('script_name'=>$script_name))->order('script_version desc')->getField('script_version');
+		if($script_version==$sv){
+			$this->returnMsg(30000,'当前脚本已最新');
+		}
+		elseif($script_version<$sv){
+			$data = array(
+				'latest version'=>$sv
+			);
+			$this->returnMsg(30001,'当前脚本需更新',$data);
+		}
+		if(!$sv){
+            $this->returnMsg(-30000,'无此脚本');
+		}
+	}
+	/**
+	 * 脚本下载
+	 * @interface 2.5
+	 * @param string $version      版本号
+	 * @param string $script_name  脚本名
+	 * @param string $unique_id    设备唯一id
+	 */
+	public function download(){
+		//参数
+		$version = I('version');
+		$script_name = I('script_name');
+		$unique_id = I('unique_id');
+		$type = I('type');
+
+		if(empty($version)||empty($unique_id)||empty($script_name)||empty($type)){
+			$this->returnMsg(-2);
+		}
+
+		//检测设备授权是否到期
+		$where = array(
+			'unique_id'=>$unique_id,
+			'type'=>$type,
+		);
+		$recent_dev = M('xxt_device_auth')->where($where)->order('overtime desc')->find();
+		if(empty($recent_dev)){
+			$this->returnMsg(-10000,'设备未授权');
+		}
+		else if($recent_dev['overtime'] < NOW_TIME){
+			$this->returnMsg(-10001,'设备授权过期');
+		}
+		else{
+            //设备已授权
+			//允许下载最新的脚本
+			$upload_path = C('SCRIPT_UPLOAD_PATH');
+			$filename = $upload_path.$version.'/'.$script_name.'.xxt';
+			import('ORG.Net.Http');
+			Http::download($filename,$script_name.'.xxt');
+		}
+	}
+
+
+	/**
+	 * 账号注册信息日志
+	 * @interface 2.6
+	 * @return array returnMsg
+	 */
+	public function register_info_log(){
+		//检测设备授权
+		$this->check_auth_device();
+        //参数
+		$dev_name  = I('dev_name');
+		$unique_id = I('unique_id');
+		$dev_ip = I('dev_ip');
+		$register_type = I('type');
+		$register_nickname = I('register_nickname');
+		$register_mobile = I('register_mobile');
+		$register_username = I('register_username');
+		$register_password = I('register_password');
+
+		if(empty($dev_name)||empty($unique_id)||empty($dev_ip)||empty($register_type)||empty($register_username)||empty($register_password)){
+			$this->returnMsg(-2);
+		}
+		$register_log_model = M('xxt_script_register_log');
+		$add = array(
+            'dev_name'=>$dev_name,
+			'unique_id'=>$unique_id,
+			'dev_ip'=>$dev_ip,
+			'register_type'=>$register_type,
+			//账号注册信息
+			'register_nickname'=>$register_nickname,
+			'register_mobile'=>$register_mobile,
+			'register_username'=>$register_username,
+			'register_password'=>$register_password,
+			'account_status'=>1,
+			'createtime'=>NOW_TIME
+		);
+		$rs = $register_log_model->add($add);
+		if($rs){
+			$this->returnMsg(0);
+		}else{
+			$this->returnMsg(-1);
+		}
+
+	}
+
+	/**
+	 * 账号异常记录
+	 * @interface 2.7
+	 * @return array returnMsg
+	 */
+	public function account_status_log(){
+		//检测设备授权
+		$this->check_auth_device();
+		$register_username  = I('register_username');
+		$remark  = I('remark');
+
+		if(empty($register_username)||empty($remark)){
+			$this->returnMsg(-2);
+		}
+
+		$save = array(
+			'account_status'=>2,
+			'remark'=>$remark,
+			'remark_time'=>NOW_TIME
+		);
+
+		$rs = M('xxt_script_register_log')->where(array('register_username'=>$register_username))->save($save);
+		if($rs){
+			$this->returnMsg(0);
+		}else{
+			$this->returnMsg(-1);
+		}
+
+	}
+
+	/**
+	 * 检测ip是否已经使用用
+	 * @interface 2.8
+	 * @return [type] [description]
+	 */
+	public function check_ip_inuse(){
+		//检测设备授权
+		$this->check_auth_device();
+
+		$dev_ip = I('dev_ip');
+		$app_type = I('type');
+
+		if( empty($dev_ip) || empty($app_type)){
+			$this->returnMsg(-2);
+		}
+		$ip = M("xxt_check_ip_inuse")->where(array("dev_ip"=>$dev_ip))->getField("dev_ip");
+		if($ip){
+			$this->returnMsg(-2001,"ip使用过");
+		}
+		$add = array(
+			'dev_ip'=>$dev_ip,
+			'app_type'=>$app_type,
+			'createtime'=>NOW_TIME,
+		);
+		$ac = M("xxt_check_ip_inuse")->add($add);
+		if($ac){
+			$this->returnMsg(0);	
+		}
+		$this->returnMsg(-1);
+
+	}
+
+
+
+	/**
+	 * 获取代理ip
+	 * @interface 2.9
+	 * @return [type] [description]
+	 */
+	public function get_ip_proxy(){
+		//检测设备授权
+		$this->check_auth_device();
+		
+		$curl = new \Org\Net\Curl;
+		//http://www.daxiangdaili.com/api
+		$url = "http://tpv.daxiangdaili.com/ip/?";
+		$tid = "556891164432684";
+		$data = array(
+			'tid'=>$tid,
+			'num'=>3,
+			'protocol'=>'http',
+			'category'=>'2',//默认为普匿 + 高匿, 可传入参数 普匿(0) / 高匿(2)
+			'delay'=>'2',//延迟，单位是秒
+			'sortby'=>'time',//默认最快优先， 传入 speed表示最快优先， time 表示最新优先
+			'filter'=>'on',//过滤24小时内提取过的默认不过滤，加上 on 参数就过滤
+		);
+		$body = F("ip_proxy");
+		if($body){
+			$iplist = json_decode($body,true);
+		}
+		if ($iplist[0]){
+			$ip = $iplist[0];
+		}else{
+			$body = $curl->getRequest($url,$data);
+			$iplist = explode("\r\n",$body);
+			$ip = $iplist[0];
+			
+		}
+		
+		unset($iplist[0]);
+		$iplist = array_values($iplist);
+		F("ip_proxy",json_encode($iplist));
+		
+		//$ip = "123.112.53.4:8118";
+		$ok_ip = strstr($ip,":");
+		if($ok_ip){
+			$chekc_ex = explode(":",$ip);
+			$rdata = array(
+				"ip"=>$chekc_ex[0],
+				"port"=>$chekc_ex[1],
+			);
+			$this->returnMsg(0,"成功",$rdata);
+		}else{
+			$this->get_ip_proxy();
+		}
+	}
+
+}

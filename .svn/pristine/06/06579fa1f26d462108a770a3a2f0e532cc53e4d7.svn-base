@@ -1,0 +1,28 @@
+[ 2016-12-20T11:19:09+08:00 ] 192.168.33.1 /index.php/Api/auth_moo/
+ERR: 无法加载控制器:Auth_moo
+
+[ 2016-12-20T11:19:13+08:00 ] 192.168.33.1 /index.php/Api/auth_momo/
+ERR: 无法加载控制器:Auth_momo
+
+[ 2016-12-20T11:23:15+08:00 ] 192.168.33.1 /index.php/Api/auth_momo/
+ERR: 无法加载控制器:Auth_momo
+
+[ 2016-12-20T11:23:24+08:00 ] 192.168.33.1 /index.php/Api/xxt_momo/
+ERR: 无法加载控制器:Xxt_momo
+
+[ 2016-12-20T11:23:27+08:00 ] 192.168.33.1 /index.php/Api/xxtmomo/
+ERR: 无法加载控制器:Xxtmomo
+
+[ 2016-12-20T11:23:41+08:00 ] 192.168.33.1 /index.php/Api/xxtmomo/
+ERR: 无法加载控制器:Xxtmomo
+
+[ 2016-12-20T11:23:44+08:00 ] 192.168.33.1 /index.php/Api/xxtmomo/index
+ERR: 无法加载控制器:Xxtmomo
+
+[ 2016-12-20T11:51:33+08:00 ] 192.168.33.1 /index.php/Api/xxtmomo/index
+ERR: 1146:Table 'xxt.getolink.cc.cmf_xxtmomo_reg' doesn't exist
+ [ SQL语句 ] : SHOW COLUMNS FROM `cmf_xxtmomo_reg`
+
+[ 2016-12-20T11:51:46+08:00 ] 192.168.33.1 /index.php/Api/xxtmomo/index
+ERR: Think\Model:desc方法不存在！
+
