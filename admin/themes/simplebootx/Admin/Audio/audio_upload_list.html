@@ -4,7 +4,7 @@
 	<div class="wrap js-check-wrap">
 		<ul class="nav nav-tabs">
 			<li class="active"><a href="{:U('audio_upload_list')}">音频列表</a></li>
-			<li><a href="{:U('index')}">音频上传</a></li>
+			<li><a href="{:U('audio_info_index')}">音频上传</a></li>
 		</ul>
 		<form class="well form-search" method="post"  action="{:U('audio_upload_list')}</if> ">
 			音频名称:
@@ -56,11 +56,7 @@
 						</foreach>
 					</td>
 					<td>
-						<switch name="vo.audio_difficulty">
-                            <case value="1">Ⅰ</case>
-							<case value="2">Ⅱ</case>
-							<case value="3">Ⅲ</case>
-						</switch>
+						难度{$vo.audio_difficulty}
 					</td>
 					<td>{$vo.audio_description}</td>
 					<td>{:date('Y-m-d H:i',$vo['createtime'])}</td>

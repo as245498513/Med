@@ -17,14 +17,14 @@ class MedbaseController extends Controller {
 	 */
 	public function check_auth(){
 		//授权参数
-		$wechat_id = I('wechat_id');
+		$token = I('token');
 
-		if(empty($wechat_id)){
+		if(empty($token)){
 			$this->returnMsg(-2);
 		}
 
 		$where = array(
-			'wx_wechat_id'=>$wechat_id,
+			'token'=>$token,
 		);
 
 		//查询当前微信是否授权

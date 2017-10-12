@@ -622,6 +622,9 @@ function upload_multi_image(dialog_title,container_selector,item_tpl_wrapper_id,
         if($("#info_audio_cover").length>0){
             $("#info_audio_cover").remove();
         }
+        if($("#info_adv_img").length>0){
+            $("#info_adv_img").remove();
+        }
         //限制不能上传多图
         if(files.length>1||$('#photos').children().length>=1){
             alert("不能同时上传多张封面!");

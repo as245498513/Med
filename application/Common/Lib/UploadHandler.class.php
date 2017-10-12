@@ -1078,7 +1078,7 @@ class UploadHandler
                         FILE_APPEND
                     );
                 } else {
-                    $file_path = iconv('utf-8','gb2312',$file_path); //利用Iconv函数对文件名进行重新编码
+                    //$file_path = iconv('utf-8','gb2312',$file_path); //利用Iconv函数对文件名进行重新编码
                     move_uploaded_file($uploaded_file, $file_path);
                 }
             } else {

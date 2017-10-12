@@ -113,8 +113,6 @@
                         .on('click', function () {
                             var audio_name = $("#file_name").text();
                             var is_exist = audio_is_exist(audio_name);
-
-
                             var $this = $(this),
                                     data = $this.data();
 
@@ -122,43 +120,55 @@
                                 layer.confirm('要上传的音频已存在,是否覆盖上传？', {
                                     btn: ['覆盖','取消'] //按钮
                                 }, function(){
-                                    $('#progress').show();
-                                    $this
+                                    var rs = unlink_file(audio_name);
+                                    if(rs){
+                                        $('#progress').show();
+                                        data.submit().always(function () {
+                                            $this.remove();
+                                        });
+                                    }else{
+                                        alert("覆盖失败！");
+                                        data.submit().always(function () {
+                                            $this.remove();
+                                        });
+                                        return;
+                                    }
+
+                                   /* $('#progress').show();
+                                    /!*$this
                                             .off('click')
                                             .text('暂停上传')
                                             .on('click', function () {
                                                 $this.remove();
                                                 data.abort();
-                                            });
+                                            });*!/
                                     data.submit().always(function () {
                                         $this.remove();
-                                    });
+                                    });*/
                                 }, function(){
                                     var index = parent.layer.getFrameIndex(window.name); //获取当前窗体索引
                                     parent.layer.close(index);
                                 });
                             }else{
                                 $('#progress').show();
-                                $this
+                                /*$this
                                         .off('click')
                                         .text('暂停上传')
+                                        .prop('disabled', !!data.files.error)
                                         .on('click', function () {
                                             $this.remove();
                                             data.abort();
-                                        });
+                                        });*/
                                 data.submit().always(function () {
                                     $this.remove();
                                 });
                             }
-
-
-
-
                         });
         $('#fileupload').fileupload({
             url: url,
             dataType: 'json',
             autoUpload: false,
+            acceptFileTypes: /(\.|\/)(mp3)$/i,
             maxFileSize: 10000000,//10MB
             disableImageResize: /Android(?!.*Chrome)|Opera/
                     .test(window.navigator.userAgent),
@@ -167,7 +177,6 @@
             previewCrop: true
         }).on('fileuploadadd', function (e, data) {
             data.context = $('<div/>').appendTo('#files');
-
 
             //限制不能选多个文件
            if($('#files').children().length>1){
@@ -193,8 +202,6 @@
                 node.appendTo(data.context);
 
             });
-
-
 
         }).on('fileuploadprocessalways', function (e, data) {
             var index = data.index,
@@ -292,6 +299,26 @@
             }
         });
         return result;
+    }
+
+    function unlink_file($audio_name){
+        var result = false;
+        $.ajax({
+            data:{filename:$audio_name},
+            type: "post",
+            dataType:"json",
+            async:false,
+            url:"{:U('del_file')}",
+            success:function(data){
+                if(data.code==0){
+                    result = true;
+                }else{
+                    result = false;
+                }
+            }
+        });
+        return result;
+
     }
 
 </script>

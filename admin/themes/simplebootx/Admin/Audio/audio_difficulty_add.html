@@ -12,39 +12,39 @@
 <body>
 	<div class="wrap js-check-wrap">
 		<ul class="nav nav-tabs">
-			<li><a href="{:U('audio_album_list')}">专辑分类列表</a></li>
+			<li><a href="{:U('audio_difficulty_list')}">难度系数列表</a></li>
 			<notempty name="info">
-				<li class="active"><a href="{:U('audio_album_add')}">编辑专辑分类</a></li>
+				<li class="active"><a href="{:U('audio_difficulty_add')}">编辑难度系数</a></li>
 				<else/>
-				<li class="active"><a href="{:U('audio_album_add')}">新增专辑分类</a></li>
+				<li class="active"><a href="{:U('audio_difficulty_add')}">新增难度系数</a></li>
 			</notempty>
 		</ul>
-		<form class="form-horizontal js-ajax-form" action="{:U('audio_album_post')}" method="post">
+		<form class="form-horizontal js-ajax-form" action="{:U('audio_difficulty_post')}" method="post">
 			<fieldset>
 				<div class="control-group">
-					<label class="control-label">专辑名称</label>
+					<label class="control-label">难度系数</label>
 					<div class="controls">
-						<input type="text" name="album_name" value="{$info.album_name}" id="album_name"/>
+						<input type="text" name="difficulty_degree" value="{$info.difficulty_degree}" id="difficulty_degree"/>
 						<span class="form-required " style="color: red;">(必填)</span>
 					</div>
 				</div>
 
 				<div class="control-group">
-					<label class="control-label">专辑描述</label>
+					<label class="control-label">难度描述</label>
 					<div class="controls">
-						<textarea name="album_desc" id="album_desc" style="width: 35%; height: 80px;" placeholder="请输入专辑描述">{$info.album_desc}</textarea>
+						<textarea name="difficulty_desc" id="difficulty_desc" style="width: 35%; height: 80px;" placeholder="请输入难度描述">{$info.difficulty_desc}</textarea>
 					</div>
 				</div>
 
 				<div class="control-group">
 					<label class="control-label">专辑封面</label>
 					<div class="controls">
-						<notempty name="info">
 						<div id="info_adv_img">
-							<img src="{$info.album_cover}" style="height:36px;width: 36px;" onclick="parent.image_preview_dialog(this.src);">
-							<input  type="hidden" name="album_cover" value="{$info.album_cover}">
+							<notempty name="info">
+							<img src="{$info.difficulty_cover}" style="height:36px;width: 36px;" onclick="parent.image_preview_dialog(this.src);">
+							<input  type="hidden" name="difficulty_cover" value="{$info.difficulty_cover}">
+							</notempty>
 						</div>
-						</notempty>
 						<ul id="photos" class="pic-list unstyled"></ul>
 						<a href="javascript:upload_multi_image('图片上传','#photos','photos-item-wrapper');" class="btn btn-small btn-success">选择图片</a>
 					</div>

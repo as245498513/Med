@@ -132,6 +132,13 @@ $(function () {
     	return false;
     });
 
+    $("#close_all").click(function(){
+        $("#task-content-inner li").not(":first").remove();
+        $("#task-content-inner li:first").click();
+        return false;
+    });
+
+
     calcTaskitemsWidth();
 });
 function calcTaskitemsWidth() {
